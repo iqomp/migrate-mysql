@@ -3,7 +3,7 @@
 /**
  * Command line result printer
  * @package iqomp/migrate-mysql
- * @version 1.0.0
+ * @version 1.0.1
  */
 
 namespace Iqomp\MigrateMysql;
@@ -11,7 +11,6 @@ namespace Iqomp\MigrateMysql;
 use Symfony\Component\Console\Input\InputInterface as In;
 use Symfony\Component\Console\Output\OutputInterface as Out;
 use Symfony\Component\Console\Helper\Table;
-use Symfony\Component\Console\Style\SymfonyStyle;
 
 class Cli
 {
@@ -29,8 +28,9 @@ class Cli
 
     public static function diff(array $diff, In $in, Out $out): void
     {
-        $io = new SymfonyStyle($in, $out);
-        $io->title($diff['model'] . ' (' . $diff['table'] . ')');
+        $out->writeln(
+            '<info>' . $diff['model'] . ' (' . $diff['table'] . ')' . '</info>'
+        );
 
         $result = $diff['result'];
 
