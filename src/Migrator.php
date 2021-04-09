@@ -3,7 +3,7 @@
 /**
  * MySQL migrator
  * @package iqomp/migrate-mysql
- * @version 1.0.0
+ * @version 1.0.2
  */
 
 namespace Iqomp\MigrateMysql;
@@ -70,6 +70,10 @@ class Migrator implements MigratorInterface
 
         if (!isset($config['charset'])) {
             $config['charset'] = 'utf8mb4';
+        }
+
+        if (!isset($config['collation'])) {
+            $config['collation'] = 'utf8mb4_general_ci';
         }
 
         if (isset($config['classmap'])) {
