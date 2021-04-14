@@ -3,7 +3,7 @@
 /**
  * Table real to config comparition
  * @package iqomp/migrate-mysql
- * @version 1.0.0
+ * @version 1.0.3
  */
 
 namespace Iqomp\MigrateMysql\Database;
@@ -88,7 +88,7 @@ class Descriptor
         $regexs = [
             'comment' => '!COMMENT \'(?<cmn>[^\' ]+)\'!',
             'default' => '!DEFAULT \'?(?<def>[^\' ]+)\'?!',
-            'field'   => '!^`(?<name>[^`]+)` (?<type>[a-z]+)(\((?<length>[^)]+)\))?.+?$!',
+            'field'   => '!^`(?<name>[^`]+)` (?<type>[a-z]+)(\((?<length>[^)]+)\))?.*$!',
             'primary' => '!^PRIMARY KEY \(([^\)]+)\)$!',
             'unique'  => '!^UNIQUE KEY `[^`]+` \(`(?<field>[^`]+)`\)$!',
             'update'  => '!ON UPDATE \'?(?<update>[^\' ]+)\'?!'

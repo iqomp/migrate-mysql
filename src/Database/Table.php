@@ -3,7 +3,7 @@
 /**
  * Table real to config comparition
  * @package iqomp/migrate-mysql
- * @version 1.0.0
+ * @version 1.0.3
  */
 
 namespace Iqomp\MigrateMysql\Database;
@@ -73,6 +73,11 @@ class Table
             $cnf_field_flat = Helper::arrayFlatten($field);
 
             foreach ($tbl_field_flat as $name => $val) {
+                // ignore the comment property
+                if ($name === 'comment') {
+                    continue;
+                }
+
                 $cnf_field_val = $cnf_field_flat[$name] ?? null;
                 if ($cnf_field_val == $val) {
                     continue;
