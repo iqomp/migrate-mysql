@@ -3,14 +3,12 @@
 /**
  * Command line result printer
  * @package iqomp/migrate-mysql
- * @version 1.0.1
+ * @version 2.0.0
  */
 
 namespace Iqomp\MigrateMysql;
 
-use Symfony\Component\Console\Input\InputInterface as In;
-use Symfony\Component\Console\Output\OutputInterface as Out;
-use Symfony\Component\Console\Helper\Table;
+use Hyperf\Command\Command as HyperfCommand;
 
 class Cli
 {
@@ -26,11 +24,9 @@ class Cli
         return substr($result, 0, 15) . '...';
     }
 
-    public static function diff(array $diff, In $in, Out $out): void
+    public static function diff(array $diff, HyperfCommand $cli): void
     {
-        $out->writeln(
-            '<info>' . $diff['model'] . ' (' . $diff['table'] . ')' . '</info>'
-        );
+        $cli->info($diff['model'] . ' (' . $diff['table'] . ')');
 
         $result = $diff['result'];
 
@@ -140,9 +136,6 @@ class Cli
             }
         }
 
-        $table = new Table($out);
-        $table->setHeaders(['Action', 'Name', 'Attributes']);
-        $table->setRows($rows);
-        $table->render();
+        $cli->table(['Action', 'Name', 'Attributes'], $rows);
     }
 }

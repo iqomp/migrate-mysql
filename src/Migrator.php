@@ -3,36 +3,21 @@
 /**
  * MySQL migrator
  * @package iqomp/migrate-mysql
- * @version 1.0.2
+ * @version 2.0.0
  */
 
 namespace Iqomp\MigrateMysql;
 
 use Iqomp\Migrate\MigratorInterface;
-use Symfony\Component\Console\Input\InputInterface as In;
-use Symfony\Component\Console\Output\OutputInterface as Out;
+use Iqomp\MigrateMysql\Database\QueryBuilder as QBuilder;
+use Hyperf\Command\Command as HyperfCommand;
 
 class Migrator implements MigratorInterface
 {
     protected $last_error;
-
-    protected $in;
-    protected $out;
+    protected $cli;
     protected $config;
-
     protected $conn;
-
-    protected $classmap = [
-        'mysqli' => 'mysqli',
-        'Cli'    => 'Iqomp\\MigrateMysql\\Cli',
-        'Sql'    => 'Iqomp\\MigrateMysql\\Database\\QueryBuilder',
-        'Syncer' => 'Iqomp\\MigrateMysql\\Syncer'
-    ];
-
-    protected function getClassMap(string $name): ?string
-    {
-        return $this->classmap[$name] ?? null;
-    }
 
     protected function query(string $sql)
     {
@@ -59,14 +44,13 @@ class Migrator implements MigratorInterface
         $this->last_error = $result;
 
         if ($print) {
-            $this->out->writeln('<error>' . $result . '</error>');
+            $this->cli->error($result);
         }
     }
 
-    public function __construct(In $in, Out $out, array $config)
+    public function __construct(HyperfCommand $cli, array $config)
     {
-        $this->in  = $in;
-        $this->out = $out;
+        $this->cli = $cli;
 
         if (!isset($config['charset'])) {
             $config['charset'] = 'utf8mb4';
@@ -85,17 +69,16 @@ class Migrator implements MigratorInterface
 
         $this->config = $config;
 
-        if (!isset($config['dbname'])) {
+        if (!isset($config['database'])) {
             $this->setError('No DB name provided on config');
         } else {
-            $mysqli = $this->getClassMap('mysqli');
-            $this->createConnection($mysqli);
+            $this->createConnection('mysqli');
         }
     }
 
     public function activateDb(): void
     {
-        $dbname = $this->config['dbname'];
+        $dbname = $this->config['database'];
 
         $this->conn->select_db($dbname);
 
@@ -113,7 +96,7 @@ class Migrator implements MigratorInterface
     public function createConnection(string $connector): void
     {
         $host = $this->config['host'] ?? null;
-        $user = $this->config['user'] ?? null;
+        $user = $this->config['username'] ?? null;
         $pass = $this->config['passwd'] ?? null;
 
         $this->conn = new $connector($host, $user, $pass);
@@ -133,10 +116,10 @@ class Migrator implements MigratorInterface
         }
 
         $charset = $this->config['charset'];
-        $name    = $this->config['dbname'];
+        $name    = $this->config['database'];
         $collate = $this->config['collation'] ?? null;
 
-        $this->out->writeln('<info>Creating database `' . $name . '`</info>');
+        $this->cli->info('Creating database `' . $name . '`');
 
         $sql = "CREATE DATABASE `$name` CHARACTER SET $charset";
         if ($collate) {
@@ -157,7 +140,7 @@ class Migrator implements MigratorInterface
     {
         $rows   = $this->query('SHOW DATABASES;');
         $exists = false;
-        $dbname = $this->config['dbname'];
+        $dbname = $this->config['database'];
 
         foreach ($rows as $row) {
             if ($row['Database'] === $dbname) {
@@ -187,30 +170,25 @@ class Migrator implements MigratorInterface
             return;
         }
 
-        $syncer = $this->getClassMap('Syncer');
-        $sqlb   = $this->getClassMap('Sql');
-        $cli    = $this->getClassMap('Cli');
-
         $config['connection'] = $this->config;
 
-        $result = $syncer::compare($this->conn, $model, $table, $config);
+        $result = Syncer::compare($this->conn, $model, $table, $config);
         if (!$result) {
             return;
         }
 
-        $sqls = $sqlb::build($result, $this->conn);
+        $sqls = QBuilder::build($result, $this->conn);
 
         if ($sqls) {
-            $this->out->write($model);
+            $this->cli->line($model);
             foreach ($sqls as $index => $sql) {
-                $this->out->write('.');
                 $res = $this->query($sql);
                 if (!$res) {
-                    $this->out->writeln('');
+                    $this->cli->line('');
                     $this->setError($this->conn->error, $this->conn->errno);
                 }
             }
-            $this->out->writeln('');
+            $this->cli->line('');
         }
     }
 
@@ -221,19 +199,16 @@ class Migrator implements MigratorInterface
             return;
         }
 
-        $syncer = $this->getClassMap('Syncer');
-        $sqlb   = $this->getClassMap('Sql');
-
         $config['connection'] = $this->config;
 
-        $result = $syncer::compare($this->conn, $model, $table, $config);
+        $result = Syncer::compare($this->conn, $model, $table, $config);
         if (!$result) {
             return;
         }
 
         $nl = PHP_EOL;
 
-        $result = $sqlb::build($result, $this->conn);
+        $result = QBuilder::build($result, $this->conn);
         if (!$result) {
             return;
         }
@@ -244,7 +219,7 @@ class Migrator implements MigratorInterface
              . $nl
              . $nl;
 
-        $this->out->write($sql);
+        $this->cli->line($sql);
     }
 
     public function testTable(string $model, string $table, array $config): void
@@ -254,16 +229,13 @@ class Migrator implements MigratorInterface
             return;
         }
 
-        $syncer = $this->getClassMap('Syncer');
-        $cli    = $this->getClassMap('Cli');
-
         $config['connection'] = $this->config;
 
-        $final = $syncer::compare($this->conn, $model, $table, $config);
+        $final = Syncer::compare($this->conn, $model, $table, $config);
         if (!$final['result']) {
             return;
         }
 
-        $cli::diff($final, $this->in, $this->out);
+        Cli::diff($final, $this->cli);
     }
 }
