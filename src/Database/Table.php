@@ -3,7 +3,7 @@
 /**
  * Table real to config comparition
  * @package iqomp/migrate-mysql
- * @version 1.0.3
+ * @version 2.0.2
  */
 
 namespace Iqomp\MigrateMysql\Database;
@@ -79,7 +79,13 @@ class Table
                 }
 
                 $cnf_field_val = $cnf_field_flat[$name] ?? null;
-                if ($cnf_field_val == $val) {
+
+                // null shouldn't be equals to 0
+                if(is_null($cnf_field_val) || is_null($val)){
+                    if ($cnf_field_val === $val) {
+                        continue;
+                    }
+                } elseif ($cnf_field_val == $val) {
                     continue;
                 }
 
