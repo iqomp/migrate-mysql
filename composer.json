@@ -3,7 +3,7 @@
     "description": "MySQL migration plugin for iqomp/migrate",
     "type": "library",
     "license": "MIT",
-    "version": "2.0.2",
+    "version": "2.1.0",
     "authors": [
         {
             "name": "Iqbal Fauzi",

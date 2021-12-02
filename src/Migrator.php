@@ -3,7 +3,7 @@
 /**
  * MySQL migrator
  * @package iqomp/migrate-mysql
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 namespace Iqomp\MigrateMysql;
@@ -97,7 +97,7 @@ class Migrator implements MigratorInterface
     {
         $host = $this->config['host'] ?? null;
         $user = $this->config['username'] ?? null;
-        $pass = $this->config['passwd'] ?? null;
+        $pass = $this->config['passwd'] ?? $this->config['password'] ?? null;
 
         $this->conn = new $connector($host, $user, $pass);
 
